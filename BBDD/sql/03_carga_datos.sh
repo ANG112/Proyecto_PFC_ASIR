@@ -1,4 +1,4 @@
--- Archivo para la carga de los datos de forma automática
+# Archivo para la carga de los datos de forma automática
 
 #!/bin/bash
 
@@ -20,7 +20,7 @@ cargar_csv() {
     local archivo=$2 # Segundo argumento de la función
     echo "Cargando $tabla..."
     psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME \
-    -c "\copy $tabla FROM '$DATA_PATH/$archivo' WITH (FORMAT CSV, HEADER); "
+    -c "\copy $tabla FROM '$DATA_PATH/$archivo' WITH (FORMAT CSV, HEADER, DELIMITER ','); "
 
 
 }
@@ -33,6 +33,6 @@ cargar_csv "stg_customers" "CUSTOMERS.csv"
 cargar_csv "stg_orders" "ORDERS.csv"
 cargar_csv "stg_order_items" "ORDER_ITEMS.csv"
 cargar_csv "stg_order_payments" "ORDER_PAYMENTS.csv"
-cargar_csv "stg_order_review_rating" "ORDER_REVIEW_RATINGS.csv"
+cargar_csv "stg_order_review_ratings" "ORDER_REVIEW_RATINGS.csv"
 
 echo "✅ Proceso de carga finalizado."

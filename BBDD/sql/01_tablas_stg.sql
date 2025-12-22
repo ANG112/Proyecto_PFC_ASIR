@@ -1,7 +1,7 @@
 -- TABLAS STAGING para insertar los datos en bruto 
 -- Solo se crean los campos con un tipo de texto laxo como TEXT
 
-DROP TABLE IF EXISTS stg_sellers, stg_products, stg_geo_location, stg_customers, stg_orders, stg_order_items, stg_order_payments, stg_order_review_rating CASCADE;
+DROP TABLE IF EXISTS stg_sellers, stg_products, stg_geo_location, stg_customers, stg_orders, stg_order_items, stg_order_payments, stg_order_review_ratings CASCADE;
 
 -- Tabla SELLERS
 CREATE TABLE  stg_sellers (
@@ -91,8 +91,6 @@ CREATE TABLE stg_order_review_ratings (
     review_id TEXT,
     order_id TEXT,
     review_score TEXT,
-    review_comment_title TEXT,
-    review_comment_message TEXT,
     review_creation_date TEXT,
     review_answer_timestamp TEXT
 );

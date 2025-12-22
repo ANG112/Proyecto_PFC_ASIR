@@ -2,7 +2,7 @@
 
 
 -- Eliminar las tablas si existen
-DROP TABLE IF EXITS sellers, products, geo_location, customers,orders, order_items, order_payments,order_review_ratings CASCADE;
+DROP TABLE IF EXISTS sellers, products, geo_location, customers,orders, order_items, order_payments,order_review_ratings CASCADE;
 DROP TYPE IF EXISTS order_status_enum;
 
 -- Tabla SELLERS
@@ -113,13 +113,10 @@ CREATE TABLE order_payments (
 
 
 -- Tabla ORDER_REVIEW_RATINGS
--- Tabla ORDER_REVIEW_RATINGS
 CREATE TABLE order_review_ratings (
     review_id VARCHAR(100) PRIMARY KEY,
     order_id VARCHAR(100) NOT NULL,
     review_score INT NOT NULL,
-    review_comment_title VARCHAR(255),
-    review_comment_message TEXT,
     review_creation_date TIMESTAMP NOT NULL,
     review_answer_timestamp TIMESTAMP,
     FOREIGN KEY (order_id) REFERENCES orders(order_id)
