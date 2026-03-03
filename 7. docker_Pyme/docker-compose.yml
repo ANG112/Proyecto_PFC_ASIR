@@ -1,0 +1,97 @@
+# version: "3.9"
+
+networks:
+  erp_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+  # --- 1. WAF (Gateway de la API) ---
+  waf:
+    image: owasp/modsecurity-crs:nginx
+    container_name: waf
+    volumes:
+      # Los archivos de configuración deben estar en el Mac Mini, 
+      # pero los contenedores deben montarlos
+      - ./nginx/custom.conf:/etc/nginx/conf.d/custom.conf:ro
+      - ./nginx/modsecurity.conf:/etc/nginx/modsecurity.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+    networks:
+      - erp_net
+
+  # --- 2. API (ERP Simulado) ---
+  api:
+    build: ./api
+    container_name: erp_api
+    # Solo necesita la URL de la DB
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - erp_net
+    # El puerto 8000 NO necesita ser expuesto al host si solo el WAF lo usa,
+    # pero lo dejamos para depuración:
+    ports:
+      - "8000:8000"
+
+  # --- 3. DATABASE (Data Warehouse) ---
+  db:
+    image: postgres:15
+    container_name: erp_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp_net
+    # Agregamos el Healthcheck para que otros servicios puedan esperar
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- 4. ETL (Extractor y Cargador de Datos) ---
+  etl:
+    build:
+      context: ./etl
+      dockerfile: Dockerfile
+    container_name: etl_service
+    env_file:
+      - .env
+    environment:
+      # Exponer la variable de entorno necesaria para la conexión de SQLAlchemy
+      DATABASE_URL: ${DATABASE_URL} 
+   # AÑADE ESTO:
+    extra_hosts:
+      "windows-gateway": "192.168.68.57" 
+    # FIN DE AÑADIDO    
+    networks:
+      - erp_net
+    depends_on:
+      db:
+        condition: service_healthy # Espera hasta que la DB esté lista
+    restart: "no" # Se ejecuta una sola vez y termina
+    
+  # --- 5. Metabase (Reporting/BI) ---
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - erp_net
+    volumes:
+      - ./metabase-data:/metabase-data
+    environment:
+      - MB_DB_FILE=/metabase-data/metabase.db
